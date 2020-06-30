@@ -10,11 +10,15 @@ export default async function (ctx: Context) {
     urls: [ctx.entryUrl],
     directory: ctx.rootPath,
     recursive: true,
+    filenameGenerator: "bySiteStructure",
     urlFilter: function (u) {
       return u.indexOf(ctx.entryUrl) === 0;
     },
     subdirectories: [
-      { directory: "img", extensions: [".jpg", ".png", ".svg", ".gif",".jpeg"] },
+      {
+        directory: "img",
+        extensions: [".jpg", ".png", ".svg", ".gif", ".jpeg"],
+      },
       { directory: "js", extensions: [".js"] },
       { directory: "css", extensions: [".css"] },
       { directory: "fonts", extensions: [".ttf", ".woff", ".woff2", ".eot"] },
