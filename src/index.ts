@@ -7,6 +7,6 @@ import loadPage from "./steps/2_loadPage";
   for (const site of appsettings.sites) {
     const ctx = { entryUrl: site } as Context;
     await download(ctx);
-    // await loadPage(ctx);
+    await loadPage(ctx);
   }
 })();
