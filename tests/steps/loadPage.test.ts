@@ -10,7 +10,7 @@ describe("loadPage", () => {
   });
 
   test("default", () => {
-    appsettings.cwd = "/Users/huanent/Downloads/wp_site_importer/bin";
+    appsettings.cwd = "D:\work\SiteTransfer\bin";
 
     let ctx = {
       entryUrl: "https://gpsites.co/dev/",

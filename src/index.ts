@@ -8,5 +8,7 @@ import loadPage from "./steps/2_loadPage";
     const ctx = { entryUrl: site } as Context;
     await download(ctx);
     await loadPage(ctx);
+
+    var aa=ctx;
   }
 })();
