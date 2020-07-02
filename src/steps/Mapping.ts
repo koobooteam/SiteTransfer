@@ -366,16 +366,15 @@ export interface UsefulStyle {
 
 }
 
-export interface RectPosition
-{
- top:number;
- bottom: number; 
- left: number; 
- right: number;
- heigth:number;
- width:number; 
- x: number; 
- y: number; 
+export interface RectPosition {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+    heigth: number;
+    width: number;
+    x: number;
+    y: number;
 
 }
 
@@ -385,78 +384,79 @@ export interface ElementResult {
     id: string;
     tagName: string;
     class: string;
-
-    Children: ElementResult[]; 
+    koobooid: string; 
+    result: string;  
+    Children: ElementResult[];
 }
 
-export interface GroupedElement
-{
-    element: ElementResult; 
+export interface GroupedElement {
+    element: ElementResult;
 
-    others: ElementResult[]; 
+    others: ElementResult[];
 
-    pages: puppeteer.Page[];  
+    pages: puppeteer.Page[];
 
 }
+
+export function GetElementResult(): ElementResult {
  
-export function ApplyElementResult(): ElementResult {
-
-    var mydoc = {} as ElementResult;
-
     var root = document.documentElement;
 
-    loop(root, mydoc);
+    var mydoc = ConvertToElementResult(root); 
+    return mydoc; 
 
-    return mydoc;
 
-    function loop(el: Element, obj: ElementResult) {
+    function ConvertToElementResult(el: Element): ElementResult {
+        var obj = {} as ElementResult;
+    
         if (!el || !el.tagName) {
-            return;
+            return obj;
         }
-
+    
         obj.id = el.id;
         obj.tagName = el.tagName;
         obj.class = el.className;
         obj.style = getStyle(el);
-
-        var rect = el.getBoundingClientRect();  
-        obj.Rect = {} as RectPosition; 
-        obj.Rect.top = rect.top; 
-        obj.Rect.bottom = rect.bottom; 
+    
+        obj.koobooid = GetKoobooId(el); 
+    
+        var rect = el.getBoundingClientRect();
+        obj.Rect = {} as RectPosition;
+        obj.Rect.top = rect.top;
+        obj.Rect.bottom = rect.bottom;
         obj.Rect.heigth = rect.height;
-        obj.Rect.width = rect.width; 
-        obj.Rect.x = rect.x; 
-        obj.Rect.y = rect.y; 
-        obj.Rect.left = rect.left; 
-        obj.Rect.right = rect.right; 
-                 
-
-        // set sub elements.
-
+        obj.Rect.width = rect.width;
+        obj.Rect.x = rect.x;
+        obj.Rect.y = rect.y;
+        obj.Rect.left = rect.left;
+        obj.Rect.right = rect.right;
+    
+        // set sub elements. 
         if (el.children && el.children.length > 0) {
             obj.Children = [];
-
+    
             var child = Array.from(el.children);
-
+    
             child.forEach(function (item) {
+    
                 var sub = {} as ElementResult;
-                loop(item, sub);
+                var sub = ConvertToElementResult(item);
                 obj.Children.push(sub);
             }
             );
-
+    
         };
-
-
-
+    
+        return obj;
+    
     };
-
-
+    
+    
     function getStyle(el: Element) {
         var result = {} as UsefulStyle;
-
+    
         var style = window.getComputedStyle(el);
-
+    
         // set important..
         // fontSize: string;
         // position:string;
@@ -468,7 +468,7 @@ export function ApplyElementResult(): ElementResult {
         // zIndex:string;
         // width: string; 
         // height: string; 
-
+    
         result.fontSize = style.fontSize;
         result.position = style.position;
         result.display = style.display;
@@ -479,8 +479,8 @@ export function ApplyElementResult(): ElementResult {
         result.zIndex = style.zIndex;
         result.height = style.height;
         result.width = style.width;
-
-
+    
+    
         // border: string;
         // background: string; 
         // column: string; 
@@ -497,165 +497,354 @@ export function ApplyElementResult(): ElementResult {
         var padding: string = "";
         var grid: string = "";
         var overflow: string = "";
-
-
+    
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("border") > -1) {
                 border += style[propertyName];
             }
         }
-
+    
         result.border = border;
-
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("background") > -1) {
                 background += style[propertyName];
             }
         }
-
+    
         result.background = background;
-
-
+    
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("text") > -1) {
                 text += style[propertyName];
             }
         }
-
+    
         result.text = text;
-
-
+    
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("column") > -1) {
                 column += style[propertyName];
             }
         }
-
+    
         result.column = column;
-
-
+    
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("margin") > -1) {
                 margin += style[propertyName];
             }
         }
         result.margin = margin;
-
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("padding") > -1) {
                 padding += style[propertyName];
             }
         }
         result.padding = padding;
-
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("grid") > -1) {
                 grid += style[propertyName];
             }
         }
         result.grid = grid;
-
+    
         for (var propertyName in style) {
             if (propertyName.indexOf("overflow") > -1) {
                 overflow += style[propertyName];
             }
         }
         result.overflow = overflow;
-
-
+    
+    
         return result;
+    
+    };
+
+   function GetKoobooId(el: Element) {
+
+        if (el == null)
+        {
+            return "null"; 
+        }
+        var list: number[] = [];
+        list.push(siblingIndex(el));
+    
+        var parent = el.parentElement;
+    
+        while (parent != null && parent.parentElement != null) {
+            list.push(siblingIndex(parent));
+            parent = parent.parentElement;
+        }
+    
+        list.reverse();
+    
+        return intToString(list);
+    
+        function siblingIndex(el: Element): number {
+            var counter: number = 0;
+            var next = el.previousSibling;
+    
+            while (next != null) {
+                counter += 1;
+                next = next.previousSibling;
+            }
+            return counter;
+        }
+    
+        function intToString(IntList: number[]) {
+            return IntList.join("-");
+        }
+    
+    }
+
+}
+ 
+
+function ConvertToElementResult(el: Element): ElementResult {
+    var obj = {} as ElementResult;
+
+    if (!el || !el.tagName) {
+        return obj;
+    }
+
+    obj.id = el.id;
+    obj.tagName = el.tagName;
+    obj.class = el.className;
+    obj.style = getStyle(el);
+
+    obj.koobooid = GetKoobooId(el); 
+
+    var rect = el.getBoundingClientRect();
+    obj.Rect = {} as RectPosition;
+    obj.Rect.top = rect.top;
+    obj.Rect.bottom = rect.bottom;
+    obj.Rect.heigth = rect.height;
+    obj.Rect.width = rect.width;
+    obj.Rect.x = rect.x;
+    obj.Rect.y = rect.y;
+    obj.Rect.left = rect.left;
+    obj.Rect.right = rect.right;
+
+    // set sub elements. 
+    if (el.children && el.children.length > 0) {
+        obj.Children = [];
+
+        var child = Array.from(el.children);
+
+        child.forEach(function (item) {
+
+            var sub = {} as ElementResult;
+            var sub = ConvertToElementResult(item);
+            obj.Children.push(sub);
+        }
+        );
 
     };
-}
+
+    return obj;
+
+};
 
 
-function GetKoobooId(el: Element) : string
-{  
-    var list: number[] = []; 
-    list.push(siblingIndex(el)); 
+function getStyle(el: Element) {
+    var result = {} as UsefulStyle;
 
-   var parent = el.parentElement;  
+    var style = window.getComputedStyle(el);
 
-   while(parent != null && parent.parentElement !=null)
-   {
-       list.push(siblingIndex(parent)); 
-       parent = parent.parentElement;  
-   }
- 
-   list.reverse();  
+    // set important..
+    // fontSize: string;
+    // position:string;
+    // display:string; 
+    // left: string;
+    // right:string;
+    // bottom:string;
+    // top: string;
+    // zIndex:string;
+    // width: string; 
+    // height: string; 
 
-   return intToString(list); 
-}
+    result.fontSize = style.fontSize;
+    result.position = style.position;
+    result.display = style.display;
+    result.left = style.left;
+    result.right = style.right;
+    result.bottom = style.bottom;
+    result.top = style.top;
+    result.zIndex = style.zIndex;
+    result.height = style.height;
+    result.width = style.width;
 
-function siblingIndex  (el: Element) : number
-{
-    var counter:number = 0; 
-    var next = el.previousElementSibling
-    
-    while(next !=null)
-    {
-        counter +=1; 
-        next = next.previousElementSibling; 
+
+    // border: string;
+    // background: string; 
+    // column: string; 
+    // text:string;
+    // margin: string;
+    // padding: string;
+    // grid: string; 
+    // overflow: string;  
+    var border: string = "";
+    var background: string = "";
+    var text: string = "";
+    var column: string = "";
+    var margin: string = "";
+    var padding: string = "";
+    var grid: string = "";
+    var overflow: string = "";
+
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("border") > -1) {
+            border += style[propertyName];
+        }
     }
-    return counter; 
+
+    result.border = border;
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("background") > -1) {
+            background += style[propertyName];
+        }
+    }
+
+    result.background = background;
+
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("text") > -1) {
+            text += style[propertyName];
+        }
+    }
+
+    result.text = text;
+
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("column") > -1) {
+            column += style[propertyName];
+        }
+    }
+
+    result.column = column;
+
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("margin") > -1) {
+            margin += style[propertyName];
+        }
+    }
+    result.margin = margin;
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("padding") > -1) {
+            padding += style[propertyName];
+        }
+    }
+    result.padding = padding;
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("grid") > -1) {
+            grid += style[propertyName];
+        }
+    }
+    result.grid = grid;
+
+    for (var propertyName in style) {
+        if (propertyName.indexOf("overflow") > -1) {
+            overflow += style[propertyName];
+        }
+    }
+    result.overflow = overflow;
+
+
+    return result;
+
+};
+
+
+export function GetKoobooId(el: Element) {
+
+    if (el == null)
+    {
+        return "null"; 
+    }
+    var list: number[] = [];
+    list.push(siblingIndex(el));
+
+    var parent = el.parentElement;
+
+    while (parent != null && parent.parentElement != null) {
+        list.push(siblingIndex(parent));
+        parent = parent.parentElement;
+    }
+
+    list.reverse();
+
+    return intToString(list);
+
+    function siblingIndex(el: Element): number {
+        var counter: number = 0;
+        var next = el.previousSibling;
+
+        while (next != null) {
+            counter += 1;
+            next = next.previousSibling;
+        }
+        return counter;
+    }
+
+    function intToString(IntList: number[]) {
+        return IntList.join("-");
+    }
+
 }
- 
 
- function intToString(IntList:number[])
-{
-    return IntList.join("-");
+
+export function GetElementByKoobooId(htmlroot: Element, KoobooId: string): ElementResult {
+    var list = stringToNumberList(KoobooId);
+
+    var el = htmlroot;
+
+    list.forEach(
+        function (index) {
+
+            if (index > el.children.length - 1) {
+                return null;
+            }
+            else {
+                // check if only count Element, not (textnode). 
+                el = el.children[index];
+            }
+        }
+    );
+
+    return ConvertToElementResult(el);
+
+
+    function stringToNumberList(koobooid: string): number[] {
+        var result: number[] = [];
+
+        var parts = koobooid.split("-");
+
+        parts.forEach(
+
+            function (item) {
+                var num = parseInt(item);
+                result.push(num);
+            }
+
+        );
+        return result;
+    }
+
+
+
 }
 
-
-// public static string GetKoobooId(Node node)
-// {
-//     List<int> indexlist = new List<int>();
-
-//     indexlist.Add(node.siblingIndex);
-
-//     Node parentNode = node.parentNode;
-
-//     while (parentNode != null && parentNode.depth != 0)
-//     {
-//         indexlist.Add(parentNode.siblingIndex);
-
-//         parentNode = parentNode.parentNode;
-//     }
-
-//     indexlist.Reverse();
-
-//     return ConvertIntListToString(indexlist);
-
-// }
-
-// public static Node GetElementByKoobooId(Document doc, string KoobooId)
-// {
-//     Node node = doc.documentElement;
-
-//     List<int> intlist = ConvertStringToIntList(KoobooId);
-
-//     foreach (int item in intlist)
-//     {
-//         if (item > node.childNodes.length - 1)
-//         {
-//             return null;
-//         }
-//         node = node.childNodes.item[item];
-//     }
-
-//     return node;
-// }
-
-// public static List<int> ConvertStringToIntList(string IntListString)
-// {
-//     List<int> intlist = new List<int>();
-
-//     string[] stringlist = IntListString.Split('-');
-
-//     foreach (var item in stringlist)
-//     {
-//         intlist.Add(Convert.ToInt32(item));
-//     }
-
-//     return intlist;
-// }

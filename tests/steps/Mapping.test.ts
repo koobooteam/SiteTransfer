@@ -5,9 +5,10 @@ import { execSync } from "child_process";
 import loadPage from "../../src/steps/2_loadPage"
 import jsdom from "jsdom"
 import { assert } from "console";
-import chrome from "puppeteer"; 
-import { ElementResult, UsefulStyle, ApplyElementResult} from "../../src/steps/Mapping"
+import chrome from "puppeteer";
+import { ElementResult, UsefulStyle, GetElementResult, GetKoobooId, GetElementByKoobooId } from "../../src/steps/Mapping"
 
+import { rootCertificates } from "tls";
 
 describe("loadPage", () => {
     beforeAll(() => {
@@ -44,26 +45,45 @@ describe("loadPage", () => {
 
 
     test("ApplyElementResult", async () => {
- 
+
         var browser = await chrome.launch();
 
         var page = await browser.newPage();
- 
+
         await page.evaluate(() => {
             document.body.innerHTML = "<body class='abcclass'><div id='11'>test</div></body>";
-        });  
-  
-        var docresult  = await page.evaluate(ApplyElementResult);
-        expect(docresult.Children.length).toBe(2); 
-        var header = docresult.Children[0].tagName; 
-        var bodyer = docresult.Children[1].tagName; 
-        var diver = docresult.Children[1].Children[0].tagName; 
+        });
 
-        expect(header).toBe("HEAD"); 
-        expect(bodyer).toBe("BODY"); 
-        expect(diver).toBe("DIV"); 
+        var docresult = await page.evaluate(GetElementResult);
 
+        expect(docresult.Children.length).toBe(2);
+        var header = docresult.Children[0].tagName;
+        var bodyer = docresult.Children[1].tagName;
+        var diver = docresult.Children[1].Children[0].tagName;
+
+        expect(header).toBe("HEAD");
+        expect(bodyer).toBe("BODY");
+        expect(diver).toBe("DIV");
     });
 
+
+    test("getKoobooId", async () => {
+
+        var browser = await chrome.launch();
+
+        var page = await browser.newPage();
+
+        var aaaa =  await page.evaluate(() => {
+            document.body.innerHTML = "<body><div>extra<div id='aa'>test</div></div></body>"; 
+
+        });
+
+        var test = await page.$("#aa");
+
+        var id = await page.evaluate(GetKoobooId, await page.$("#aa"));
+
+        expect(id).toContain("1-1");
+
+    });
 
 });
