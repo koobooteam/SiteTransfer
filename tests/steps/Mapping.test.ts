@@ -1,14 +1,15 @@
-import { Context } from "../../src/models/Context";
+import { Context, IPage } from "../../src/models/Context";
 import path from "path";
 import appsettings from "../../src/appsettings";
 import { execSync } from "child_process";
 import loadPage from "../../src/steps/2_loadPage"
-import jsdom from "jsdom"
+import { JSDOM } from "jsdom"
 import { assert } from "console";
 import chrome from "puppeteer";
-import { ElementResult, UsefulStyle, GetElementResult, GetKoobooId, GetElementByKoobooId } from "../../src/steps/Mapping"
+import { ElementResult, UsefulStyle, GroupBy, GetElementResult, GetKoobooId, GetElementByKoobooId, ApplyElementResult } from "../../src/steps/Mapping"
 
 import { rootCertificates } from "tls";
+import { isContext } from "vm";
 
 describe("loadPage", () => {
     beforeAll(() => {
@@ -30,9 +31,8 @@ describe("loadPage", () => {
     test("CalculateSimilarScore", () => {
 
         var one = "<div id='11'>test</div>";
-        var two = "<div>testtwo</div>";
 
-        var el = new jsdom.JSDOM(one);
+        var el = new JSDOM(one);
 
         var find = el.window.document.getElementById("11")!;
 
@@ -44,7 +44,7 @@ describe("loadPage", () => {
 
 
 
-    test("ApplyElementResult", async () => {
+    test("GetElementResult", async () => {
 
         var browser = await chrome.launch();
 
@@ -73,8 +73,8 @@ describe("loadPage", () => {
 
         var page = await browser.newPage();
 
-        var aaaa =  await page.evaluate(() => {
-            document.body.innerHTML = "<body><div>extra<div id='aa'>test</div></div></body>"; 
+        var aaaa = await page.evaluate(() => {
+            document.body.innerHTML = "<body><div>extra<div id='aa'>test</div></div></body>";
 
         });
 
@@ -82,7 +82,72 @@ describe("loadPage", () => {
 
         var id = await page.evaluate(GetKoobooId, await page.$("#aa"));
 
-        expect(id).toContain("1-1");
+        expect(id).toContain("1-0-1");
+
+        var result = await page.evaluate(GetElementByKoobooId, id);
+
+        expect(result.id).toBe("aa");
+
+    });
+
+
+
+    test("applyResult", async () => {
+
+        var browser = await chrome.launch();
+        var page = await browser.newPage();
+        var aaaa = await page.evaluate(() => {
+            document.body.innerHTML = "<body><div>extra<div id='aa'>test</div></div></body>";
+
+        });
+
+        var ctx = {} as Context
+        ctx.pages = [];
+        var obj = {} as IPage;
+        obj.value = page;
+        ctx.pages.push(obj);
+
+        await ApplyElementResult(ctx);
+
+        expect(ctx.elResults.length).toBe(1);
+
+        var div = ctx.elResults[0].Children[1].Children[0].Children[0];
+
+        expect(div.id).toBe("aa");
+
+    });
+
+
+    test("groupby", async () => {
+
+        var browser = await chrome.launch();
+        var pageone = await browser.newPage();
+        await pageone.evaluate(() => {
+            document.body.innerHTML = "<body><div><div>TEST</div></div></body>";
+        });
+
+        var pagetwo = await browser.newPage();
+        await pagetwo.evaluate(() => {
+            document.body.innerHTML = "<body><div><div>NEXT</div></div></body>";
+        });
+
+        var ctx = {} as Context
+        ctx.pages = [];
+
+        var obj = {} as IPage;
+        obj.value = pageone;
+        obj.path = "/one"
+        ctx.pages.push(obj);
+
+
+        var obj2 = {} as IPage;
+        obj2.value = pageone;
+        obj2.path = "/two"
+        ctx.pages.push(obj2);
+
+        var result = await GroupBy(ctx);
+
+        expect(result.children.length).toBe(2);  
 
     });
 
