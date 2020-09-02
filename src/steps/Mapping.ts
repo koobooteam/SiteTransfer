@@ -5,14 +5,14 @@ import { listenerCount } from "process";
 import { appendFile, readdirSync } from "fs";
 import { countReset } from "console";
 import { generateKeyPair } from "crypto";
-
-
-
+ 
 export async function ApplyElementResult(context: Context) {
 
     var result = [] as ElementResult[];
 
     for (var page of context.pages) {
+        // TODO: exclude home page...
+        
         var item = await page.value.evaluate(GetElementResult);
         SetPageKey(item, page); 
         result.push(item);  
@@ -32,6 +32,7 @@ export async function ApplyElementResult(context: Context) {
 
 export async function GroupBy(context: Context) : Promise<GroupedElement> {
 
+    // TDOO: check similar on Text, if text is the same, more possible to be in the layout... 
     await ApplyElementResult(context);
 
     var root = {} as GroupedElement;
@@ -39,10 +40,8 @@ export async function GroupBy(context: Context) : Promise<GroupedElement> {
     // first root always start with HTML. 
     var root = {} as GroupedElement; 
     root.children  = []; 
- 
-     
-    //html.elements = context.elResults; 
-    
+  
+    //html.elements = context.elResults;  
     context.elResults.forEach(el => {
          AppendElement(root, el); 
      });
@@ -75,9 +74,12 @@ export async function GroupBy(context: Context) : Promise<GroupedElement> {
     // g is the copy generated of el. 
     function AppendSub(g: GroupedElement, el: ElementResult)
     {
-        el.Children.forEach(element => {
-            AppendElement(g, element); 
-        });
+        if (el && el.Children)
+        {
+            el.Children.forEach(element => { 
+                AppendElement(g, element); 
+            });
+        } 
     }
 
     function Generate(el: ElementResult): GroupedElement
@@ -89,6 +91,7 @@ export async function GroupBy(context: Context) : Promise<GroupedElement> {
         result.rect = el.rect; 
         result.top = el.rect.top; 
         result.left = el.rect.left; 
+        result.cssposition = el.style.position; 
 
         result.elements = []; 
         result.elements.push(el); 
@@ -123,9 +126,7 @@ export async function GroupBy(context: Context) : Promise<GroupedElement> {
         }
   
         return true; 
-    }
-
-
+    } 
     function SameString(A: string, B: string): boolean
     {
         if (A || B)
@@ -144,9 +145,9 @@ export async function GroupBy(context: Context) : Promise<GroupedElement> {
 }
 
 
+export function IsSimiliar(A: ElementResult, B: ElementResult): boolean { 
+    // - Check similar, should add check  children index.. 
 
-
-export function IsSimiliar(A: ElementResult, B: ElementResult): boolean {
     if (A.id != B.id) {
         return false;
     }
@@ -231,6 +232,7 @@ export interface ElementResult {
     result: string;
     Children: ElementResult[];
     pagekey: string;   // name or path of the page. to identify the page back. 
+    nodeType: number; // 
 }
 
 export interface GroupedElement { 
@@ -256,7 +258,7 @@ export function GetElementResult(): ElementResult {
     function ConvertToElementResult(el: Element): ElementResult {
         var obj = {} as ElementResult;
 
-        if (!el || !el.tagName) {
+        if (!el || el.nodeType != Node.ELEMENT_NODE ||  !el.tagName) {
             return obj;
         }
 
@@ -266,6 +268,7 @@ export function GetElementResult(): ElementResult {
         obj.style = getStyle(el);
 
         obj.koobooid = GetKoobooId(el);
+        obj.nodeType = el.nodeType; 
 
         var rect = el.getBoundingClientRect();
         obj.rect = {} as RectPosition;
