@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "启动程序",
       "preLaunchTask": "${defaultBuildTask}",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": ["<node_internals>/**/*.js", "${workspaceFolder}/node_modules/**/*.js"],
       "program": "${workspaceFolder}/src/index.ts",
       "outFiles": ["${workspaceFolder}/bin/**/*.js"]
     }

@@ -6,6 +6,7 @@ import loadPage from "../../src/steps/2_loadPage"
 import { JSDOM } from "jsdom"
 import { assert } from "console";
 import chrome from "puppeteer";
+import 'expect-puppeteer'
 import { ElementResult, UsefulStyle, GroupBy, GetElementResult, GetKoobooId, GetElementByKoobooId, ApplyElementResult } from "../../src/steps/Mapping"
 
 import { rootCertificates } from "tls";
@@ -97,6 +98,7 @@ describe("loadPage", () => {
         var browser = await chrome.launch();
         var page = await browser.newPage();
         var aaaa = await page.evaluate(() => {
+          
             document.body.innerHTML = "<body><div>extra<div id='aa'>test</div></div></body>";
 
         });
@@ -119,16 +121,17 @@ describe("loadPage", () => {
 
 
     test("groupby", async () => {
-
-        var browser = await chrome.launch();
+        jest.setTimeout(2000000)
+        var browser = await chrome.launch({headless: false,devtools:true});
         var pageone = await browser.newPage();
+
         await pageone.evaluate(() => {
-            document.body.innerHTML = "<body><div><div>TEST</div></div></body>";
+            document.body.innerHTML = "<body><div><div id=a><p>TEST<p></div></div></body>";
         });
 
         var pagetwo = await browser.newPage();
         await pagetwo.evaluate(() => {
-            document.body.innerHTML = "<body><div><div>NEXT</div></div></body>";
+            document.body.innerHTML = "<body><div><div id=b>NEXT</div></div></body>";
         });
 
         var ctx = {} as Context

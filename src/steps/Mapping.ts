@@ -5,32 +5,30 @@ import { listenerCount } from "process";
 import { appendFile, readdirSync } from "fs";
 import { countReset } from "console";
 import { generateKeyPair } from "crypto";
- 
+
 export async function ApplyElementResult(context: Context) {
 
     var result = [] as ElementResult[];
 
     for (var page of context.pages) {
         // TODO: exclude home page...
-        
         var item = await page.value.evaluate(GetElementResult);
-        SetPageKey(item, page); 
-        result.push(item);  
-    } 
-    context.elResults = result; 
-    function SetPageKey(el: ElementResult, page: IPage)
-    {
-        el.pagekey = page.path; 
-        if (el.Children !=null)
-        { 
+        SetPageKey(item, page);
+        result.push(item);
+        
+    }
+    context.elResults = result;
+    function SetPageKey(el: ElementResult, page: IPage) {
+        el.pagekey = page.path;
+        if (el.Children != null) {
             el.Children.forEach(element => {
-                SetPageKey(element, page); 
-            }); 
+                SetPageKey(element, page);
+            });
         }
     }
 }
 
-export async function GroupBy(context: Context) : Promise<GroupedElement> {
+export async function GroupBy(context: Context): Promise<GroupedElement> {
 
     // TDOO: check similar on Text, if text is the same, more possible to be in the layout... 
     await ApplyElementResult(context);
@@ -38,114 +36,98 @@ export async function GroupBy(context: Context) : Promise<GroupedElement> {
     var root = {} as GroupedElement;
 
     // first root always start with HTML. 
-    var root = {} as GroupedElement; 
-    root.children  = []; 
-  
+    var root = {} as GroupedElement;
+    root.children = [];
+
     //html.elements = context.elResults;  
     context.elResults.forEach(el => {
-         AppendElement(root, el); 
-     });
+        AppendElement(root, el);
+    });
 
-     return root; 
+    return root;
 
-   function AppendElement(Parent: GroupedElement, el: ElementResult)
-    { 
-        var found = false; 
+    function AppendElement(Parent: GroupedElement, el: ElementResult) {
+        var found = false;
         for (const it of Parent.children) {
 
-            if (CheckSimilar(it, el))
-            {
-                it.elements.push(el); 
-                AppendSub(it, el); 
-                found = true;  
+            if (CheckSimilar(it, el)) {
+                it.elements.push(el);
+                AppendSub(it, el);
+                found = true;
                 break;
-            }  
+            }
         }
 
-        if (!found)
-        {
-            var newitem = Generate(el); 
-            Parent.children.push(newitem); 
-            newitem.children = [];  
-            AppendSub(newitem, el); 
-        } 
+        if (!found) {
+            var newitem = Generate(el);
+            Parent.children.push(newitem);
+            newitem.children = [];
+            AppendSub(newitem, el);
+        }
     }
 
     // g is the copy generated of el. 
-    function AppendSub(g: GroupedElement, el: ElementResult)
-    {
-        if (el && el.Children)
-        {
-            el.Children.forEach(element => { 
-                AppendElement(g, element); 
+    function AppendSub(g: GroupedElement, el: ElementResult) {
+        if (el && el.Children) {
+            el.Children.forEach(element => {
+                AppendElement(g, element);
             });
-        } 
+        }
     }
 
-    function Generate(el: ElementResult): GroupedElement
-    {
-        var result = {} as GroupedElement; 
-        result.id = el.id; 
-        result.tagName = el.tagName; 
-        result.class = el.class; 
-        result.rect = el.rect; 
-        result.top = el.rect.top; 
-        result.left = el.rect.left; 
-        result.cssposition = el.style.position; 
+    function Generate(el: ElementResult): GroupedElement {
+        var result = {} as GroupedElement;
+        result.id = el.id;
+        result.tagName = el.tagName;
+        result.class = el.class;
+        result.rect = el.rect;
+        result.top = el.rect.top;
+        result.left = el.rect.left;
+        result.cssposition = el.style.position;
 
-        result.elements = []; 
-        result.elements.push(el); 
-        return result; 
+        result.elements = [];
+        result.elements.push(el);
+        return result;
     }
 
-    function CheckSimilar(g: GroupedElement, e: ElementResult): boolean
-    {
-        if (g.tagName != e.tagName)
-        {
-            return false; 
+    function CheckSimilar(g: GroupedElement, e: ElementResult): boolean {
+        if (g.tagName != e.tagName) {
+            return false;
         }
 
-        if (!SameString(e.id, g.id))
-        {
-            return false; 
-        }
-        
-        if (!SameString(g.cssposition, e.style.position))
-        {
-            return false; 
+        if (!SameString(e.id, g.id)) {
+            return false;
         }
 
-        if (Math.abs(g.top - e.rect.top )> 10)
-        {
-            return false; 
+        if (!SameString(g.cssposition, e.style.position)) {
+            return false;
         }
 
-        if (Math.abs(g.left - e.rect.left)>10)
-        {
-            return false; 
+        if (Math.abs(g.top - e.rect.top) > 10) {
+            return false;
         }
-  
-        return true; 
-    } 
-    function SameString(A: string, B: string): boolean
-    {
-        if (A || B)
-        {
-            return A == B; 
+
+        if (Math.abs(g.left - e.rect.left) > 10) {
+            return false;
         }
-        else
-        {
-            if (!A && !B)
-            {
-                return true; 
+
+        return true;
+    }
+    function SameString(A: string, B: string): boolean {
+        if (A || B) {
+            return A == B;
+        }
+        else {
+            if (!A && !B) {
+                return true;
             }
-            return false; 
+            return false;
         }
     }
 }
 
 
-export function IsSimiliar(A: ElementResult, B: ElementResult): boolean { 
+export function IsSimiliar(A: ElementResult, B: ElementResult): boolean {
     // - Check similar, should add check  children index.. 
 
     if (A.id != B.id) {
@@ -158,10 +140,9 @@ export function IsSimiliar(A: ElementResult, B: ElementResult): boolean {
 
     if (!SimilarRect(A.rect, B.rect)) {
         return false;
-    } 
+    }
 
-    if (A.style.position && B.style.position && A.style.position != B.style.position)
-    {
+    if (A.style.position && B.style.position && A.style.position != B.style.position) {
         return false;
     }
 
@@ -235,30 +216,31 @@ export interface ElementResult {
     nodeType: number; // 
 }
 
-export interface GroupedElement { 
-    rect: RectPosition;  
-    id: string; 
-    tagName: string; 
-    class: string; 
-    cssposition: string; 
-    top: number; 
-    left: number; 
-    elements: ElementResult[]; 
+export interface GroupedElement {
+    rect: RectPosition;
+    id: string;
+    tagName: string;
+    class: string;
+    cssposition: string;
+    top: number;
+    left: number;
+    elements: ElementResult[];
     children: GroupedElement[];
 }
 
-export function GetElementResult(): ElementResult {
+export function GetElementResult() {
+    debugger
+     var root = document.body;
+     var mydoc = ConvertToElementResult(root);
+     return mydoc;
 
-    var root = document.documentElement;
-    var mydoc = ConvertToElementResult(root);
-    return mydoc;
 
-    /* repeating block */
+    // /* repeating block */
 
     function ConvertToElementResult(el: Element): ElementResult {
         var obj = {} as ElementResult;
 
-        if (!el || el.nodeType != Node.ELEMENT_NODE ||  !el.tagName) {
+        if (!el || el.nodeType != Node.ELEMENT_NODE || !el.tagName) {
             return obj;
         }
 
@@ -268,7 +250,7 @@ export function GetElementResult(): ElementResult {
         obj.style = getStyle(el);
 
         obj.koobooid = GetKoobooId(el);
-        obj.nodeType = el.nodeType; 
+        obj.nodeType = el.nodeType;
 
         var rect = el.getBoundingClientRect();
         obj.rect = {} as RectPosition;
@@ -419,7 +401,7 @@ export function GetElementResult(): ElementResult {
 
     function GetKoobooId(el: Element) {
 
-        if (el == null) {
+        if (!el) {
             return "null";
         }
         var list: number[] = [];
@@ -427,7 +409,7 @@ export function GetElementResult(): ElementResult {
 
         var parent = el.parentElement;
 
-        while (parent != null && parent.parentElement != null) {
+        while (parent && parent.parentElement) {
             list.push(siblingIndex(parent));
             parent = parent.parentElement;
         }
@@ -440,7 +422,7 @@ export function GetElementResult(): ElementResult {
             var counter: number = 0;
             var next = el.previousSibling;
 
-            while (next != null) {
+            while (next) {
                 counter += 1;
                 next = next.previousSibling;
             }
