@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@types/string-similarity": "^3.0.0",
-    "jsdom": "^16.2.2",
+    "jsdom": "^16.5.0",
     "puppeteer": "^4.0.1",
     "website-scraper": "^4.2.1"
   },
